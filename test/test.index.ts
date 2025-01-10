@@ -44,7 +44,7 @@ describe('🔑 authenticate', () => {
     callbackUrl = 'http://localhost:3000/oauth2callback?code=123';
   });
 
-  it('should return credentials', async () => {
+  it('should return credentials with key.json file', async () => {
     const access_token = 'fake-access-token';
     const refresh_token = 'fake-refresh-token';
     const scope = nock('https://oauth2.googleapis.com')
@@ -63,10 +63,29 @@ describe('🔑 authenticate', () => {
     assert.strictEqual(client.credentials.refresh_token, refresh_token);
   });
 
-  it('should throw an error if no keyfilePath is passed', async () => {
+  it('should return credentials with json object', async () => {
+    const access_token = 'fake-access-token';
+    const refresh_token = 'fake-refresh-token';
+    const scope = nock('https://oauth2.googleapis.com')
+      .post('/token')
+      .reply(200, {
+        access_token,
+        refresh_token,
+      });
+    const keyObject = require(path.resolve(keyfilePath))  
+    const client = await nla.authenticate({
+      keyObject,
+      scopes: [],
+    });
+    scope.done();
+    assert.strictEqual(client.credentials.access_token, access_token);
+    assert.strictEqual(client.credentials.refresh_token, refresh_token);
+  });
+
+  it('should throw an error if no keyfilePath or keyObject is passed', async () => {
     await assert.rejects(
       nlaTypes.authenticate({} as nlaTypes.LocalAuthOptions),
-      /keyfilePath must be set/
+      /keyfilePath or keyObject must be set/
     );
   });
 
@@ -81,6 +100,20 @@ describe('🔑 authenticate', () => {
         scopes: [],
       }),
       /The provided keyfile does not define/
+    );
+  });
+  it('should throw if the keyObject has no redirectUrl', async () => {
+    const keyfilePath = path.join(
+      __dirname,
+      '../../test/fixtures/keys-no-redirect.json'
+    );
+    const keyObject = require(path.resolve(keyfilePath)) 
+    await assert.rejects(
+      nlaTypes.authenticate({
+        keyObject: keyObject,
+        scopes: [],
+      }),
+      /The provided keyObject does not define/
     );
   });
 

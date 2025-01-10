@@ -39,8 +39,13 @@ function isAddressInfo(addr: string | AddressInfo | null): addr is AddressInfo {
 }
 
 export interface LocalAuthOptions {
-  keyfilePath: string;
+  keyfilePath?: string;
+  keyObject?:KeysObject;
   scopes: string[] | string;
+}
+export interface KeysObject{
+  installed:any;
+  web:any;
 }
 
 // Open an http server to accept the oauth callback. In this
@@ -51,8 +56,8 @@ export async function authenticate(
 ): Promise<OAuth2Client> {
   if (
     !options ||
-    !options.keyfilePath ||
-    typeof options.keyfilePath !== 'string'
+    (!options.keyfilePath && !options.keyObject) ||
+    (options.keyfilePath && typeof options.keyfilePath !== 'string')
   ) {
     throw new Error(
       'keyfilePath must be set to the fully qualified path to a GCP credential keyfile.'
@@ -60,8 +65,21 @@ export async function authenticate(
   }
 
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const keyFile = require(resolve(options.keyfilePath));
-  const keys = keyFile.installed || keyFile.web;
+  let keyObject:KeysObject;
+  let keys:any = {};
+  if(options.keyfilePath){
+    keyObject = require(resolve(options.keyfilePath));
+    keys = keyObject.installed || keyObject.web;
+  }
+  else if(options.keyObject){
+    keyObject = options.keyObject
+    keys = keyObject.installed || keyObject.web
+  }
+  else{
+    throw new Error(
+      'keyfilePath or KeyObject must be set.'
+    );
+  }
   if (!keys.redirect_uris || keys.redirect_uris.length === 0) {
     throw new Error(invalidRedirectUri);
   }
@@ -113,7 +131,7 @@ export async function authenticate(
     });
 
     let listenPort = 3000;
-    if (keyFile.installed) {
+    if (keyObject.installed) {
       // Use ephemeral port if not a web client
       listenPort = 0;
     } else if (redirectUri.port !== '') {
