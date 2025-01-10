@@ -1,5 +1,5 @@
 {
-  "name": "@google-cloud/local-auth",
+  "name": "@google-cloud/local-auth-extended",
   "version": "3.0.1",
   "description": "A standalone library for receiving Google OAuth tokens",
   "main": "build/src/index.js",
@@ -26,7 +26,7 @@
     "api-extractor": "api-extractor run --local",
     "api-documenter": "api-documenter yaml --input-folder=temp"
   },
-  "repository": "googleapis/nodejs-local-auth",
+  "repository": "chaudharykapil/nodejs-local-auth-extended",
   "keywords": [
     "google"
   ],
